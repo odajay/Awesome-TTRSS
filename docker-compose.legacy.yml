@@ -1,12 +1,12 @@
 version: "3"
 services:
   database.postgres:
-    image: postgres:alpine
+    image: sameersbn/postgresql:latest
     container_name: postgres
     environment:
-      - POSTGRES_PASSWORD=ttrss # please change the password
+      - PG_PASSWORD=ttrss # please change the password
     volumes:
-      - ~/Code/Awesome-TTRSS/postgres/data/:/var/lib/postgresql/ # persist postgres data to ~/postgres/data/ on the host
+      - ~/postgres/data/:/var/lib/postgresql/ # persist postgres data to ~/postgres/data/ on the host
     restart: always
 
   service.rss:
@@ -15,14 +15,13 @@ services:
     ports:
       - 181:80
     environment:
-      - SELF_URL_PATH=http://konoha.local:181/ # please change to your own domain
+      - SELF_URL_PATH=http://localhost:181/ # please change to your own domain
       - DB_HOST=database.postgres
       - DB_PORT=5432
       - DB_NAME=ttrss
       - DB_USER=postgres
       - DB_PASS=ttrss # please change the password
       - ENABLE_PLUGINS=auth_internal,fever # auth_internal is required. Plugins enabled here will be enabled for all users as system plugins
-      - FEED_LOG_QUIET=true
     stdin_open: true
     tty: true
     restart: always
