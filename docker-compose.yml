@@ -7,7 +7,7 @@ services:
       - PG_PASSWORD=ttrss # please change the password
       - DB_EXTENSION=pg_trgm
     volumes:
-      - ~/Software/Awesome-TTRSS/postgres/data/:/var/lib/postgresql/ # persist postgres data to ~/postgres/data/ on the host
+      - ~/Code/Awesome-TTRSS/postgres/data/:/var/lib/postgresql/ # persist postgres data to ~/postgres/data/ on the host
     restart: always
 
   service.rss:
