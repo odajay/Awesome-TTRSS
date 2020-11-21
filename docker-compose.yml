@@ -6,7 +6,8 @@ services:
     environment:
       - POSTGRES_PASSWORD=ttrss # please change the password
     volumes:
-      - ~/Code/Awesome-TTRSS-Data/postgres/data/:/var/lib/postgresql/ # persist postgres data to ~/postgres/data/ on the host
+      - ~/Code/Awesome-TTRSS-Data/postgres/data/:/var/lib/postgresql/
+      - ~/Code/Awesome-TTRSS-Data/themes:/var/www/themes.local # persist postgres data to ~/postgres/data/ on the host
     restart: always
 
   service.rss:
