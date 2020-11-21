@@ -59,7 +59,10 @@ docker run -it --name ttrss --restart=always \
 - DB_NAME: 数据库名字
 - DB_USER: 数据库用户名
 - DB_PASS: 数据库密码
+- DB_USER_FILE: Docker Secrets 支持（替代 DB_USE），包含数据库用户名的文件
+- DB_PASS_FILE: Docker Secrets 支持（替代 DB_PASS），包含数据库密码的文件
 - ENABLE_PLUGINS: 全局启用的插件名称，其中 `auth_internal` 为必须启用的登录插件
+- ALLOW_PORTS: 逗号分隔端口号，如`1200,3000`。允许订阅非 80,443 端口的源。**🔴 谨慎使用。**
 - SESSION_COOKIE_LIFETIME: 使用网页版登陆时 cookie 过期时间，单位为小时，默认为 `24` 小时
 - HTTP_PROXY: `ip:port`, TTRSS 实例的全局代理，为源地址添加单独代理请使用 [Options per Feed](#options-per-feed)
 - SINGLE_USER_MODE: `true` 为开启单用户模式，同时关闭用户认证，无需登录即可使用。**请仅在安全环境下开启**
@@ -118,8 +121,8 @@ server {
 
 ```nginx
     location /ttrss/ {
-        rewrite /ttrss/(.*) $1 break
-        proxy_redirect https://$http_host https://$http_host/ttrss
+        rewrite /ttrss/(.*) /$1 break;
+        proxy_redirect https://$http_host https://$http_host/ttrss;
         proxy_pass http://ttrssdev;
 
         proxy_set_header  Host                $http_host;
@@ -176,22 +179,14 @@ service.mercury:
     - com.centurylinklabs.watchtower.enable=false
 ```
 
-## 迁移
+## 数据库更新或迁移
 
+Postgres 大版本更新需要额外的步骤来确保服务正常运行。
 为了更好地优化 Awesome TTRSS，有时候可能会推出一些破坏性更新。
 
-### Postgres 数据库迁移
+### 步骤
 
-从 sameersbn/postgresql 迁移至 postgres:alpine。
-
-| 容器镜像      | sameersbn/postgresql | postgres:alpine              |
-| ------------- | -------------------- | ---------------------------- |
-| Postgres 版本 | 10.2                 | latest （文档更新时为 12.1 ) |
-| 大小          | 176MB                | 72.8MB                       |
-
-sameersbn/postgresql 已经完成了它的使命，pg_trgm 扩展已经不再需要通过它来开启，迁移至 postgres:alpine 可以让 Awesome TTRSS 获得 Postgres 的最新更新，以及节约超过 100MB 的部署空间。
-
-开始迁移：
+这些步骤演示了如何进行 Postgres 大版本更新（从 12.x 至 13.x），或者从其他镜像迁移至 postgres:alpine。
 
 1. 停止所有服务容器：
    ```bash
@@ -202,6 +197,7 @@ sameersbn/postgresql 已经完成了它的使命，pg_trgm 扩展已经不再需
    ```bash
    docker exec postgres pg_dumpall -c -U 数据库用户名 > export.sql
    ```
+1. 删除 Postgres 数据卷 `~/postgres/data/`。
 1. 根据最新 [docker-compose.yml](https://github.com/HenryQW/Awesome-TTRSS/blob/master/docker-compose.yml) 中的`database.postgres` 部份来更新你的 docker-compose 文件（**注意 `DB_NAME` 不可更改**），并启动：
    ```bash
    docker-compose up -d
@@ -212,7 +208,7 @@ sameersbn/postgresql 已经完成了它的使命，pg_trgm 扩展已经不再需
    ```
 1. 测试所有服务是否正常工作，现在你可以移除步骤二中的备份了。
 
-旧版 docker-compose 文件已经被 [归档为 docker-compose.legacy.yml](https://github.com/HenryQW/Awesome-TTRSS/blob/master/docker-compose.legacy.yml)。
+旧版 docker-compose（支持 Postgres 12）已经被 [归档为 docker-compose.pg12.yml](https://github.com/HenryQW/Awesome-TTRSS/blob/master/docker-compose.pg12.yml)，且不再维护。
 
 ## 插件
 
@@ -290,6 +286,12 @@ sameersbn/postgresql 已经完成了它的使命，pg_trgm 扩展已经不再需
 提供单独为源地址配置代理、user-agent 以及 SSL 证书验证的能力。
 
 使用指南见 [Options per Feed](https://github.com/sergey-dryabzhinsky/options_per_feed)。
+
+### [Wallabag v2](https://github.com/joshp23/ttrss-to-wallabag-v2)
+
+保存文章至 Wallabag。
+
+使用指南见 [Wallabag v2](https://github.com/joshp23/ttrss-to-wallabag-v2)。
 
 ### [Remove iframe sandbox](https://github.com/DIYgod/ttrss-plugin-remove-iframe-sandbox)
 

@@ -57,9 +57,12 @@ docker run -it --name ttrss --restart=always \
 - DB_HOST: the address of your database
 - DB_PORT: the port of your database
 - DB_NAME: the name of your database
-- DB_USER: the user of your database
+- DB_USER: the user of your Database
 - DB_PASS: the password of your database
+- DB_USER_FILE: Docker Secrets support(alternative to DB_USER), the file containing the user of your database
+- DB_PASS_FILE: Docker Secrets support(alternative to DB_PASS), the file containing the password of your database
 - ENABLE_PLUGINS: the plugins you'd like to enable as global plugins, note that `auth_internal` is required
+- ALLOW_PORTS: comma-separated port numbers, eg:`1200,3000`. Allow subscription of non-'80,443' port feed. **🔴 Use with caution.**
 - SESSION_COOKIE_LIFETIME: the expiry time in hours for your login session cookie in hours, default to `24` hours
 - HTTP_PROXY: `ip:port`, the global proxy for your TTRSS instance, to set proxy on a per feed basis, use [Options per Feed](#options-per-feed)
 - SINGLE_USER_MODE: `true` will enable single user mode and disable user authentication, which means login will not be required. **Please only enable this under a secure environment**
@@ -118,8 +121,8 @@ If you want to place TTRSS under a subdirectory, such as `https://mydomain.com/t
 
 ```nginx
     location /ttrss/ {
-        rewrite /ttrss/(.*) $1 break
-        proxy_redirect https://$http_host https://$http_host/ttrss
+        rewrite /ttrss/(.*) /$1 break;
+        proxy_redirect https://$http_host https://$http_host/ttrss;
         proxy_pass http://ttrssdev;
 
         proxy_set_header  Host                $http_host;
@@ -176,32 +179,25 @@ service.mercury:
     - com.centurylinklabs.watchtower.enable=false
 ```
 
-## Migration
+## Database Upgrade or Migration
 
-To further optimize Awesome TTRSS, sometimes breaking changes will be introduced.
+Postgres major upgrades will require some manual operations.
+Sometimes breaking changes will be introduced to further optimize Awesome TTRSS.
 
-### Postgres Migration
+### Steps
 
-Migrate from sameersbn/postgresql to postgres:alpine.
-
-| Image            | sameersbn/postgresql | postgres:alpine                         |
-| ---------------- | -------------------- | --------------------------------------- |
-| Postgres version | 10.2                 | latest (12.1 as of the time of writing) |
-| Size             | 176MB                | 72.8MB                                  |
-
-Since sameersbn/postgresql is no longer needed for enabling the pg_trgm extension, switching to postgres:alpine will benefit Awesome TTRSS from latest updates of Postgres and also be able to reduce the deployment size by over 100MB.
-
-To begin the migration:
+This section demonstrates the steps to upgrade Postgres major version (from 12.x to 13.x) or migrate from other images to postgres:alpine.
 
 1. Stop all the service containers:
    ```bash
    docker-compose stop
    ```
-1. Move the Postgres data volume `~/postgres/data/`, or the location specified in your docker-compose file, to somewhere else as a backup, THIS IS IMPORTANT.
+1. Copy the Postgres data volume `~/postgres/data/` (or the location specified in your docker-compose file) to somewhere else as a backup, **THIS IS IMPORTANT**.
 1. Use the following command to dump all your data:
    ```bash
    docker exec postgres pg_dumpall -c -U YourUsername > export.sql
    ```
+1. Delete the Postgres data volume `~/postgres/data/`.
 1. Update your docker-compose file (**Note that the `DB_NAME` must not be changed**) with `database.postgres` section in the the latest [docker-compose.yml](https://github.com/HenryQW/Awesome-TTRSS/blob/master/docker-compose.yml), and bring it up:
    ```bash
    docker-compose up -d
@@ -212,7 +208,7 @@ To begin the migration:
    ```
 1. Test if everything works fine, and now you may remove the backup in step 2.
 
-The legacy docker-compose file is [archived as docker-compose.legacy.yml](https://github.com/HenryQW/Awesome-TTRSS/blob/master/docker-compose.legacy.yml).
+The legacy docker-compose file (supports Postgres 12) is [archived as docker-compose.pg12.yml](https://github.com/HenryQW/Awesome-TTRSS/blob/master/docker-compose.pg12.yml), and will no longer be maintained.
 
 ## Plugins
 
@@ -307,6 +303,12 @@ This plugin cannot be enabled in conjunction with `Fever API` as global plugins,
 Remove the sandbox attribute on iframes, thus enabling playback of embedded video in feeds.
 
 Refer to [Remove iframe sandbox](https://github.com/DIYgod/ttrss-plugin-remove-iframe-sandbox)。
+
+### [Wallabag v2](https://github.com/joshp23/ttrss-to-wallabag-v2)
+
+Save articles to Wallabag.
+
+Refer to [Wallabag v2](https://github.com/joshp23/ttrss-to-wallabag-v2)。
 
 ## Themes
 
