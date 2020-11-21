@@ -1,3 +1,5 @@
 node_modules
 docs/dist/
 postgres/
+docker-compose.bak*
+.DS_Store
